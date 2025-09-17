@@ -17,8 +17,7 @@ class CoroutinePool(
 ) {
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
     // 버퍼를 제한해 백프레셔 (제한 없으면 무한 대기열 → 메모리 증가 위험)
-//    private val queue = Channel<suspend () -> Unit>(capacity = 1024)
-    private val queue = Channel<suspend () -> Unit>(capacity = 1)
+    private val queue = Channel<suspend () -> Unit>(capacity = 1024)
     private val workers: List<Job>
 
     init {

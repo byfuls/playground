@@ -8,10 +8,15 @@ class CoroutinePoolTest {
     fun testCoroutinePool() {
         runBlocking{
             val coroutinePool = CoroutinePool(3)
+
+            coroutinePool.submit {
+                println("Coroutine Pool Started")
+            }
+
             repeat(10) { i ->
                 coroutinePool.submit {
                     println("Task $i started")
-                    Thread.sleep(1000)
+//                    Thread.sleep(1000)
                     println("Task $i finished")
                 }
             }
