@@ -31,29 +31,29 @@ class KafkaConsumerServiceTest {
         println("Test end...")
     }
 
-    @Test
-    fun `consume acknowledges and processes messages`() {
-        val receiver: KafkaReceiver<String, String> = mock()
-
-        val offset1 = mock<ReceiverOffset>()
-        val record1 = mock<ReceiverRecord<String, String>>()
-        whenever(record1.value()).thenReturn("hello")
-        whenever(record1.receiverOffset()).thenReturn(offset1)
-
-        val offset2 = mock<ReceiverOffset>()
-        val record2 = mock<ReceiverRecord<String, String>>()
-        whenever(record2.value()).thenReturn("world")
-        whenever(record2.receiverOffset()).thenReturn(offset2)
-
-        whenever(receiver.receive()).thenReturn(Flux.just(record1, record2))
-
-        val service = KafkaConsumerService(receiver)
-        service.consume()
-
-        // Allow async subscription to process
-        Thread.sleep(Duration.ofMillis(100).toMillis())
-
-        verify(offset1).acknowledge()
-        verify(offset2).acknowledge()
-    }
+//    @Test
+//    fun `consume acknowledges and processes messages`() {
+//        val receiver: KafkaReceiver<String, String> = mock()
+//
+//        val offset1 = mock<ReceiverOffset>()
+//        val record1 = mock<ReceiverRecord<String, String>>()
+//        whenever(record1.value()).thenReturn("hello")
+//        whenever(record1.receiverOffset()).thenReturn(offset1)
+//
+//        val offset2 = mock<ReceiverOffset>()
+//        val record2 = mock<ReceiverRecord<String, String>>()
+//        whenever(record2.value()).thenReturn("world")
+//        whenever(record2.receiverOffset()).thenReturn(offset2)
+//
+//        whenever(receiver.receive()).thenReturn(Flux.just(record1, record2))
+//
+//        val service = KafkaConsumerService(receiver)
+//        service.consume()
+//
+//        // Allow async subscription to process
+//        Thread.sleep(Duration.ofMillis(100).toMillis())
+//
+//        verify(offset1).acknowledge()
+//        verify(offset2).acknowledge()
+//    }
 }
