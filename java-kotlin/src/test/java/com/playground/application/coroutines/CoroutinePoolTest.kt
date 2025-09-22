@@ -15,16 +15,16 @@ class CoroutinePoolTest {
         runBlocking{
             val coroutinePool = CoroutinePool(3)
 
-            coroutinePool.submit {
-                println("Coroutine Pool Started")
+            coroutinePool.setHandler { msg ->
+                println("Task started")
+                println("Message received: $msg")
+                println("Task finished")
             }
 
+            coroutinePool.submit("Coroutine Pool Started")
+
             repeat(10) { i ->
-                coroutinePool.submit {
-                    println("Task $i started")
-//                    Thread.sleep(1000)
-                    println("Task $i finished")
-                }
+                coroutinePool.submit("Task $i")
             }
             coroutinePool.closeAndJoin()
             println("Coroutine pool closed")
@@ -36,16 +36,15 @@ class CoroutinePoolTest {
     lateinit var kafkaConsumerService: KafkaConsumerService
     @Test
     fun testCombineCoroutinePoolAndKafkaReactiveConsumer() {
-//        runBlocking {
-            val coroutinePool = CoroutinePool(3)
-            kafkaConsumerService.consume() {
-                coroutinePool.submit {
-                    println("Task started")
-//                    Thread.sleep(1000)
-                    println("Task finished")
-                }
-            }
-//        }
+        val coroutinePool = CoroutinePool(3)
+        coroutinePool.setHandler { msg ->
+            println("Task started")
+            println("Message received: $msg")
+            Thread.sleep(1000)
+            println("Task finished")
+        }
+
+        kafkaConsumerService.consumeTo(coroutinePool)
 
         Thread.sleep(Duration.ofSeconds(30))
     }

@@ -17,14 +17,24 @@ class CoroutinePool(
 ) {
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
     // 버퍼를 제한해 백프레셔 (제한 없으면 무한 대기열 → 메모리 증가 위험)
-    private val queue = Channel<suspend () -> Unit>(capacity = 1024)
+    private val queue = Channel<String>(capacity = 1024)
+    @Volatile
+    private var handler: (suspend (String) -> Unit)? = null
     private val workers: List<Job>
 
     init {
         workers = List(size) {
             scope.launch {
-                for (task in queue) {
-                    try { task() }
+                for (message in queue) {
+                    try {
+                        val currentHandler = handler
+                        if (currentHandler != null) {
+                            currentHandler(message)
+                        } else {
+                            // 핸들러가 설정되지 않은 경우 드롭하거나 로깅
+                            println("No handler set for CoroutinePool. Dropping message: $message")
+                        }
+                    }
                     catch (e: CancellationException) { throw e }
                     catch (t: Throwable) {
                         println("Error occurred in worker coroutine: $t")
@@ -34,7 +44,11 @@ class CoroutinePool(
         }
     }
 
-    suspend fun submit(task: suspend () -> Unit) = queue.send(task)
+    fun setHandler(processor: suspend (String) -> Unit) {
+        handler = processor
+    }
+
+    suspend fun submit(message: String) = queue.send(message)
     suspend fun closeAndJoin() {
         queue.close()
         workers.joinAll()

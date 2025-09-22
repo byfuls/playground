@@ -1,6 +1,7 @@
 package com.playground.application.kafka.consumer.service
 
 import kotlinx.coroutines.reactor.mono
+import com.playground.application.coroutines.CoroutinePool
 import jakarta.annotation.PostConstruct
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
@@ -42,33 +43,23 @@ class KafkaConsumerService(
         )
     }
 
-    fun consume(process: suspend (String) -> Unit) {
-        val kafkaFlux: Flux<String> = kafkaReceiver
+    fun consumeTo(pool: CoroutinePool) {
+        val kafkaFlux = kafkaReceiver
             .receive()
-            .map { record ->
+            .concatMap { record ->
                 val value = record.value()
                 println("Received message: $value")
-                record.receiverOffset().acknowledge()
-                value
+                mono {
+                    pool.submit(value)
+                    // 메시지를 풀에 안전히 큐잉한 후 ack
+                    record.receiverOffset().acknowledge()
+                }
             }
 
-        kafkaFlux
-            .doOnNext { msg ->
-                println("Received message: $msg")
-            }
-            .concatMap { msg ->
-                mono { process(msg) }
-            }
-            .subscribe(
-            { _ ->
-                println("Message processed")
-            },
-            { error ->
-                println("Error occurred: $error")
-            },
-            {
-                println("Flux completed")
-            }
+        kafkaFlux.subscribe(
+            { _ -> println("Message enqueued to CoroutinePool") },
+            { error -> println("Error occurred: $error") },
+            { println("Flux completed") }
         )
     }
 }
